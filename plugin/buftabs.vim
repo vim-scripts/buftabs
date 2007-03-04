@@ -1,40 +1,63 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Buftabs (C) 2006 Ico Doornekamp
 "
-" This is a simple script that allows switching between buffers with the F1 and
-" F2 keys, while showing a tabs-like list of buffers in the bottom of the
-" window. The biggest advantage of this script over various others is that it
-" does not take any lines of the window.
+" Introduction
+" ------------
+" This is a simple script that shows a tabs-like list of buffers in the bottom
+" of the window. The biggest advantage of this script over various others is
+" that it does not take any lines away from your terminal, leaving more space
+" for the document you're editing. The tabs are only visible when you need
+" them - when you are switchin between buffers.
 "
-" The default mappings can be changed by modifiying the maps in the bottom of
-" this file
+" Usage
+" -----
+" This script draws buffer tabs on vim startup, when a new buffer is created
+" and when switching between buffers.
+"
+" It might be handy to create a few maps for easy switching of buffers in your
+" .vimrc file. For example:
+"
+"   noremap <f1> :bprev<CR> 
+"   noremap <f2> :bnext<CR>
+"
+"
+" The following extra configuration variables are availabe:
+" 
+" - g:buftabs_only_basename
+"
+"   Set this to 1 to make buftabs only print the filename of each buffer,
+"   omitting the directory name. Add to your .vimrc:
+"
+"   :let g:buftabs_only_basename=1
+"
+"
+" Bugs
+" ----
+"
+" Vim's 'set hidden' option is known to break this plugin - for some reason
+" vim will overwrite the buftabs when this option is enabled. 
+"
+"
+" Changelog
+" ---------
 " 
 " 0.1	2006-09-22	Initial version	
 "
-" 02	2006-09-22	Better handling when the list of buffers is longer
-" 			then the window width.
+" 0.2	2006-09-22  Better handling when the list of buffers is longer then the
+"                 window width.
 "
-" 0.3	2006-09-27	Some cleanups, set 'hidden' mode by default
+" 0.3	2006-09-27  Some cleanups, set 'hidden' mode by default
 "
-" 0.4	2007-02-26	Don't draw buftabs until VimEnter event to avoid
-" 			clutter at startup in some circumstances
+" 0.4	2007-02-26  Don't draw buftabs until VimEnter event to avoid clutter at
+"                 startup in some circumstances
 "
-" 0.5	2007-02-26	Added option for showing only filenames without
-" 			directories in tabs
+" 0.5	2007-02-26  Added option for showing only filenames without directories
+"                 in tabs
+"
+" 0.6	2007-03-04  'only_basename' changed to a global variable.  Removed
+"                 functions and add event handlers instead.  'hidden' mode 
+"                 broke some things, so is disabled now. Fixed documentation
 " 
-" 
-" Configuration parameters go here :
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-" Set this flag to true to only show filenames without directories
-" in the tabs. For example /etc/inittab is shown as only 'inittab'
-
-let s:only_basename = 0
-
-
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" End of configuration parameters, code starts here
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 "
@@ -49,7 +72,7 @@ endfunction
 
 
 "
-" Draw the actual buftabs
+" Draw the buftabs
 "
 
 function! Buftabs_show()
@@ -65,43 +88,45 @@ function! Buftabs_show()
 	if s:buftabs_enabled != 1 
 		return
 	endif
-	
-	" Add all buffer names to the list. Visible buffers are enclosed in
-	" []'s, modified buffers get an exclaimation mark appended.
+
+	" Walk the list of buffers
 
 	while(l:i <= bufnr('$'))
 
-		" Skip help and hidden windows
-		
-		if getbufvar(l:i, "&modifiable") != 1 || getbufvar(l:i, "&hidden") == 0
-			break
-		endif
+		" Only show buffers in the list, and omit help screens
+	
+		if buflisted(l:i) && getbufvar(l:i, "&modifiable") 
 
-		if bufwinnr(l:i) != -1
-			let l:list = l:list . '['
-			let l:start = strlen(l:list)
-		else
-			let l:list = l:list . ' '
-		endif
+			" Append the current buffer number and name to the list. If the buffer
+			" is the active buffer, it is enclosed in square brackets. If it is
+			" modified, it is appended with an exclaimation mark
+
+			if bufwinnr(l:i) != -1
+				let l:list = l:list . '['
+				let l:start = strlen(l:list)
+			else
+				let l:list = l:list . ' '
+			endif
+				
+			let l:list = l:list . l:i . "-" 
+
+			if exists("g:buftabs_only_basename")
+				let l:list = l:list . fnamemodify(bufname(l:i), ":t")
+			else
+				let l:list = l:list . bufname(l:i)
+			endif
+
+			if getbufvar(l:i, "&modified") == 1
+				let l:list = l:list . "!"
+			endif
 			
-		let l:list = l:list . l:i . "-" 
-
-		if s:only_basename 
-			let l:list = l:list . fnamemodify(bufname(l:i), ":t")
-		else
-			let l:list = l:list . bufname(l:i)
-		endif
-
-		if getbufvar(l:i, "&modified") == 1
-			let l:list = l:list . "!"
-		endif
-		
-		if bufwinnr(l:i) != -1
-			let l:list = l:list . ']'
-			let l:end = strlen(l:list)
-		else
-			let l:list = l:list . ' '
-		endif
+			if bufwinnr(l:i) != -1
+				let l:list = l:list . ']'
+				let l:end = strlen(l:list)
+			else
+				let l:list = l:list . ' '
+			endif
+		end
 
 		let l:i = l:i + 1
 	endwhile
@@ -127,15 +152,14 @@ function! Buftabs_show()
 
 endfunction
 
-" Show buftabs at startup and map F1/F2 to switch between buffers
+
+" Hook to events to show buftabs at startup, when creating and when switching
+" buffers
 
 autocmd VimEnter * call Buftabs_enable()
 autocmd VimEnter * call Buftabs_show()
 autocmd BufNew * call Buftabs_show()
-:noremap <f1> :bprev<return>:call Buftabs_show()<enter>
-:noremap <f2> :bnext<return>:call Buftabs_show()<enter>
+autocmd BufEnter * call Buftabs_show()
 
-set hidden
-
-" end
+" vi: ts=2 sw=2
 
