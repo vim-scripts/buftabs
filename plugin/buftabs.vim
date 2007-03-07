@@ -15,21 +15,36 @@
 " and when switching between buffers.
 "
 " It might be handy to create a few maps for easy switching of buffers in your
-" .vimrc file. For example:
+" .vimrc file. For example, using F1 and F2 keys:
 "
 "   noremap <f1> :bprev<CR> 
 "   noremap <f2> :bnext<CR>
 "
+" or using control-left and control-right keys:
+"
+"   :noremap <C-left> :bprev<CR>
+"   :noremap <C-right> :bnext<CR>
+"
 "
 " The following extra configuration variables are availabe:
 " 
-" - g:buftabs_only_basename
+" * g:buftabs_only_basename
 "
-"   Set this to 1 to make buftabs only print the filename of each buffer,
+"   Define this variable to make buftabs only print the filename of each buffer,
 "   omitting the directory name. Add to your .vimrc:
 "
 "   :let g:buftabs_only_basename=1
 "
+"
+" * g:buftabs_in_statusline
+"
+"   Define this variable to make the plugin show the buftabs in the statusline
+"   instead of the command line. It is a good idea to configure vim to show
+"   the statusline as well when only one window is open. Add to your .vimrc:
+"
+"   set laststatus=2
+"   :let g:buftabs_in_statusline=1
+"    
 "
 " Bugs
 " ----
@@ -57,6 +72,9 @@
 " 0.6	2007-03-04  'only_basename' changed to a global variable.  Removed
 "                 functions and add event handlers instead.  'hidden' mode 
 "                 broke some things, so is disabled now. Fixed documentation
+"
+" 0.7 2007-03-07	Added configuration option to show tabs in statusline
+"                 instead of cmdline
 " 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
@@ -81,8 +99,8 @@ function! Buftabs_show()
 	let l:list = ''
 	let l:start = 0
 	let l:end = 0
-	if ! exists("g:from") 
-		let g:from = 0
+	if ! exists("s:from") 
+		let s:from = 0
 	endif
 
 	if s:buftabs_enabled != 1 
@@ -136,19 +154,26 @@ function! Buftabs_show()
 
 	let l:width = winwidth(0) - 12
 
-	if(l:start < g:from) 
-		let g:from = l:start - 1
+	if(l:start < s:from) 
+		let s:from = l:start - 1
 	endif
-	if l:end > g:from + l:width
-		let g:from = l:end - l:width 
+	if l:end > s:from + l:width
+		let s:from = l:end - l:width 
 	endif
 		
-	let l:list = strpart(l:list, g:from, l:width)
+	let l:list = strpart(l:list, s:from, l:width)
 
-	" Show the list
-	
-	redraw
-	echon l:list
+	" Show the list. The buftabs_in_statusline variable determines of the list
+	" is displayed in the command line (volatile) or in the statusline
+	" (persistent)
+
+	if exists("g:buftabs_in_statusline")
+		let g:buftabs_list = l:list
+		set statusline=\ %{g:buftabs_list}%=%l,%c\ 
+	else
+		redraw
+		echon l:list
+	end
 
 endfunction
 
@@ -158,6 +183,7 @@ endfunction
 
 autocmd VimEnter * call Buftabs_enable()
 autocmd VimEnter * call Buftabs_show()
+autocmd VimResized * call Buftabs_show()
 autocmd BufNew * call Buftabs_show()
 autocmd BufEnter * call Buftabs_show()
 
