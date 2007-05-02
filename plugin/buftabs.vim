@@ -75,6 +75,8 @@
 "
 " 0.7 2007-03-07	Added configuration option to show tabs in statusline
 "                 instead of cmdline
+"
+" 0.8 2007-04-02	Update buftabs when leaving insertmode
 " 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
@@ -186,6 +188,8 @@ autocmd VimEnter * call Buftabs_show()
 autocmd VimResized * call Buftabs_show()
 autocmd BufNew * call Buftabs_show()
 autocmd BufEnter * call Buftabs_show()
+autocmd InsertLeave * call Buftabs_show()
+autocmd BufWritePost * call Buftabs_show()
 
 " vi: ts=2 sw=2
 
