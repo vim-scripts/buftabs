@@ -31,7 +31,7 @@
 " * g:buftabs_only_basename
 "
 "   Define this variable to make buftabs only print the filename of each buffer,
-"   omitting the directory name. Add to your .vimrc:
+"   omitting the preceding directory name. Add to your .vimrc:
 "
 "   :let g:buftabs_only_basename=1
 "
@@ -77,6 +77,9 @@
 "                 instead of cmdline
 "
 " 0.8 2007-04-02	Update buftabs when leaving insertmode
+"
+" 0.9 2007-08-22	Now compatible with older Vim versions < 7.0, 
+"                 thanks to Noah Spurrier for the patch
 " 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
@@ -185,11 +188,13 @@ endfunction
 
 autocmd VimEnter * call Buftabs_enable()
 autocmd VimEnter * call Buftabs_show()
-autocmd VimResized * call Buftabs_show()
 autocmd BufNew * call Buftabs_show()
 autocmd BufEnter * call Buftabs_show()
-autocmd InsertLeave * call Buftabs_show()
 autocmd BufWritePost * call Buftabs_show()
+if version >= 700
+	autocmd InsertLeave * call Buftabs_show()
+	autocmd VimResized * call Buftabs_show()
+end
 
 " vi: ts=2 sw=2
 
