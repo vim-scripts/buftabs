@@ -107,6 +107,8 @@
 " 0.11 2008-02-29  Added optional syntax highlighting to active buffer name
 "
 " 0.12 2009-03-18  Fixed support for split windows
+"
+" 0.13 2009-05-07  Store and reuse right-aligned part of original statusline
 " 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
@@ -115,6 +117,7 @@
 "
 
 let s:buftabs_enabled = 0
+let s:original_statusline = matchstr(&statusline, "%=.*")
 
 function! Buftabs_enable()
 	let s:buftabs_enabled = 1
@@ -222,8 +225,7 @@ function! Buftabs_show()
 	" (persistent)
 
 	if exists("g:buftabs_in_statusline")
-		let l:line = substitute(l:list, ' ', '\\ ', 'g') . "%=%l,%c"
-		execute "setlocal statusline=" . line
+		let &l:statusline = l:list . s:original_statusline
 	else
 		redraw
 		echon l:list
