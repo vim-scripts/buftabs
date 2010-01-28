@@ -68,13 +68,6 @@
 "   :let g:buftabs_active_highlight_group="Visual"
 "
 "
-" Bugs
-" ----
-"
-" Vim's 'set hidden' option is known to break this plugin - for some reason
-" vim will overwrite the buftabs when this option is enabled. 
-"
-"
 " Changelog
 " ---------
 " 
@@ -109,6 +102,9 @@
 " 0.12 2009-03-18  Fixed support for split windows
 "
 " 0.13 2009-05-07  Store and reuse right-aligned part of original statusline
+"
+" 0.14 2010-01-28  Fixed bug that caused buftabs in command line being
+"                  overwritten when 'hidden' mode is enabled.
 " 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
@@ -122,6 +118,21 @@ let s:original_statusline = matchstr(&statusline, "%=.*")
 function! Buftabs_enable()
 	let s:buftabs_enabled = 1
 endfunction
+
+
+"
+" Persistent echo to avoid overwriting of status line when 'hidden' is enabled
+" 
+
+function! Pecho(msg)
+	let s:hold_ut=&ut|let &ut=1
+	let s:Pecho=a:msg
+	aug Pecho
+		au CursorHold * ec s:Pecho
+					\|let &ut=s:hold_ut
+					\|aug Pecho|exe 'au!'|aug END|aug! Pecho
+	aug END
+endf
 
 
 "
@@ -228,7 +239,7 @@ function! Buftabs_show()
 		let &l:statusline = l:list . s:original_statusline
 	else
 		redraw
-		echon l:list
+		call Pecho(l:list)
 	end
 
 endfunction
