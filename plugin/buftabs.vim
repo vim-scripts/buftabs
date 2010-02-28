@@ -123,14 +123,26 @@
 "									 Fixed wrong buffer display when deleting last window.
 "									 Added extra options for tabs style and highlighting.
 "
+"	0.16 2010-02-28  Fixed bug causing errors when using buftabs in vim
+"                  diff mode.
+"
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+let w:buftabs_enabled = 0
+let w:original_statusline = matchstr(&statusline, "%=.*")
+
+"
+" Don't bother when in diff mode
+"
+
+if &diff                                      
+	finish
+endif     
+
 
 "
 " Called on VimEnter event
 "
-
-let w:buftabs_enabled = 0
-let w:original_statusline = matchstr(&statusline, "%=.*")
 
 function! Buftabs_enable()
 	let w:buftabs_enabled = 1
