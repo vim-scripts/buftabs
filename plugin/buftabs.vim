@@ -120,11 +120,15 @@
 " 
 " 0.15 2010-02-16  Fixed window width handling bug which caused strange
 "                  behaviour in combination with the bufferlist plugin.
-"									 Fixed wrong buffer display when deleting last window.
-"									 Added extra options for tabs style and highlighting.
+"                  Fixed wrong buffer display when deleting last window.
+"                  Added extra options for tabs style and highlighting.
 "
 "	0.16 2010-02-28  Fixed bug causing errors when using buftabs in vim
 "                  diff mode.
+"
+" 0.17 2011-03-11  Changed persistent echo function to restore 'updatetime',
+"                  leading to better behaviour when showing buftabs in the
+"                  status line.
 "
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
@@ -153,13 +157,14 @@ endfunction
 " Persistent echo to avoid overwriting of status line when 'hidden' is enabled
 " 
 
-function! Pecho(msg)
-	let s:hold_ut=&ut|let &ut=1
+let s:Pecho=''
+function! s:Pecho(msg)
+	if &ut!=1|let s:hold_ut=&ut|let &ut=1|en
 	let s:Pecho=a:msg
 	aug Pecho
-		au CursorHold * ec s:Pecho
-					\|let &ut=s:hold_ut
-					\|aug Pecho|exe 'au!'|aug END|aug! Pecho
+		au CursorHold * if s:Pecho!=''|echo s:Pecho
+					\|let s:Pecho=''|let &ut=s:hold_ut|en
+				\|aug Pecho|exe 'au!'|aug END|aug! Pecho
 	aug END
 endf
 
@@ -289,7 +294,7 @@ function! Buftabs_show(deleted_buf)
 		let &l:statusline = l:list . w:original_statusline
 	else
 		redraw
-		call Pecho(l:list)
+		call s:Pecho(l:list)
 	end
 
 endfunction
